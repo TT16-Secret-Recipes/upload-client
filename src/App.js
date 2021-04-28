@@ -1,46 +1,55 @@
 import React, { useState } from "react";
 import axios from "axios";
-
 function App() {
-  const [file, setFile] = useState({});
+  const [selectedFile, setSelectedFile] = useState();
+  const [isFilePicked, setIsFilePicked] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState({})
 
-  const changeHandler = (e) => {
-    console.log(e.target.files[0]);
-    setFile(e.target.files[0]);
+  const changeHandler = (event) => {
+    setSelectedFile(event.target.files[0]);
+    setIsFilePicked(true);
   };
-
-  const handleSubmit = (e) => {
+  const handleSubmission = (e) => {
     e.preventDefault();
-    console.log(file);
+    const formData = new FormData();
+    formData.append("file", selectedFile);
     axios
-      .post("http://localhost:8000/upload", file, {
-        // receive two parameter endpoint url ,form data
+      .post("http://localhost:5000/api/upload", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       })
       .then((res) => {
-        // then print response status
-        console.log(res.statusText);
+        console.log("Success:", res);
+        const { fileName, filePath } = res.data;
+
+        setUploadedFile({ fileName, filePath })
+      })
+      .catch((error) => {
+        console.error("Error:", error);
       });
   };
-
   return (
-    <div className="app">
-      <h1>Hello World!</h1>
-      <form
-        id="upload"
-        action="/profile"
-        method="post"
-        enctype="multipart/form-data"
-        onSubmit={handleSubmit}
-      >
-        <input type="file" name="file" onChange={changeHandler} />
-        <button class="btn-alert" type="submit">
-          {" "}
-          Upload{" "}
-        </button>
-      </form>
-    </div>
+    <form onSubmit={handleSubmission}>
+      <h3>{uploadedFile.fileName}</h3>
+      <input type="file" name="file" onChange={changeHandler} />
+      {isFilePicked ? (
+        <div>
+          <p>Filename: {selectedFile.name}</p>
+          <p>Filetype: {selectedFile.type}</p>
+          <p>Size in bytes: {selectedFile.size}</p>
+          <p>
+            lastModifiedDate:{" "}
+            {selectedFile.lastModifiedDate.toLocaleDateString()}
+          </p>
+        </div>
+      ) : (
+        <p>Select a file to show details</p>
+      )}
+      <div>
+        <button>Submit</button>
+      </div>
+    </form>
   );
 }
-
 export default App;
-
